@@ -3,18 +3,16 @@ package org.springframework.pulsar.core;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
-import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.MessageListener;
 import org.apache.pulsar.client.api.MessageRouter;
 import org.apache.pulsar.client.api.MessageRoutingMode;
 import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.client.api.TopicMetadata;
@@ -25,26 +23,35 @@ import org.testcontainers.utility.DockerImageName;
 import org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer;
 import org.springframework.pulsar.listener.PulsarContainerProperties;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 public class FailoverConsumerTests {
 
 	private static final DockerImageName PULSAR_IMAGE = DockerImageName.parse("apachepulsar/pulsar:2.10.0");
 
 	@Test
-	public void testDefaultConsumer() throws PulsarClientException {
+	public void testFailOverConsumersOnPartitionedTopic() throws Exception {
 		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
 			pulsar.start();
+
+			PulsarAdmin admin = PulsarAdmin.builder()
+					.serviceHttpUrl(pulsar.getHttpServiceUrl())
+					.build();
+
+			String topicName = "persistent://public/default/my-part-topic-1";
+			int numPartitions = 3;
+			admin.topics().createPartitionedTopic(topicName, numPartitions);
+
 			Map<String, Object> config = new HashMap<>();
-			final HashSet<String> strings = new HashSet<>();
-			strings.add("my-part-topic-1");
-			config.put("topicNames", strings);
+			final HashSet<String> topics = new HashSet<>();
+			topics.add("my-part-topic-1");
+			config.put("topicNames", topics);
 			config.put("subscriptionName", "my-part-subscription-1");
-			Map<String, Object> clientConfig = new HashMap<>();
-			clientConfig.put("serviceUrl", pulsar.getPulsarBrokerUrl());
 			final PulsarClient pulsarClient = PulsarClient.builder()
 					.serviceUrl(pulsar.getPulsarBrokerUrl())
 					.build();
 			final DefaultPulsarConsumerFactory<String> pulsarConsumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
-			CountDownLatch latch = new CountDownLatch(1);
+			CountDownLatch latch = new CountDownLatch(3);
 			PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
 			pulsarContainerProperties.setMessageListener(new MessageListener() {
 				@Override
@@ -68,36 +75,12 @@ public class FailoverConsumerTests {
 			prodConfig.put("messageRoutingMode", MessageRoutingMode.CustomPartition);
 			final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, prodConfig);
 			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
-			CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe", new FooRouter());
-			future.thenAccept(m -> System.out.println("Got " + m));
-			try {
-				Thread.sleep(2000);
-				final MessageId messageId = future.get();
-				System.out.println();
-			}
-			catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
-			future = pulsarTemplate.sendAsync("hello alice doe", new BarRouter());
-			future.thenAccept(m -> System.out.println("Got " + m));
-			try {
-				Thread.sleep(2000);
-				final MessageId messageId = future.get();
-				System.out.println();
-			}
-			catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
-			future = pulsarTemplate.sendAsync("hello buzz doe", new BuzzRouter());
-			future.thenAccept(m -> System.out.println("Got " + m));
-			try {
-				Thread.sleep(2000);
-				final MessageId messageId = future.get();
-				System.out.println();
-			}
-			catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
+
+			pulsarTemplate.sendAsync("hello john doe", new FooRouter());
+			pulsarTemplate.sendAsync("hello alice doe", new BarRouter());
+			pulsarTemplate.sendAsync("hello buzz doe", new BuzzRouter());
+			final boolean await = latch.await(10, TimeUnit.SECONDS);
+			assertThat(await).isTrue();
 		}
 	}
 

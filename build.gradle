@@ -247,6 +247,8 @@ project ('spring-pulsar') {
 			exclude group: 'org.springframework'
 		}
 		api "org.apache.pulsar:pulsar-client:$pulsarVersion"
+		api "org.apache.pulsar:pulsar-client-admin:$pulsarVersion"
+		api "org.apache.pulsar:pulsar-client-admin-api:$pulsarVersion"
 
 		optionalApi 'com.fasterxml.jackson.core:jackson-core'
 		optionalApi 'com.fasterxml.jackson.core:jackson-databind'

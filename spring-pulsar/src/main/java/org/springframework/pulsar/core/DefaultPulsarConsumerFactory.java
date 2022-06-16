@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import io.micrometer.common.util.StringUtils;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.ConsumerBuilder;
@@ -58,8 +59,12 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 		assert topics1 != null;
 		final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
 		synchronized (this.consumerConfig) {
-			this.consumerConfig.put("topicNames", strings);
-			this.consumerConfig.put("subscriptionName", properties.getSubscriptionName());
+			if (!strings.isEmpty()) {
+				this.consumerConfig.put("topicNames", strings);
+			}
+			if (StringUtils.isNotEmpty(properties.getSubscriptionName())) {
+				this.consumerConfig.put("subscriptionName", properties.getSubscriptionName());
+			}
 
 
 			if (!CollectionUtils.isEmpty(this.consumerConfig)) {

@@ -38,49 +38,7 @@ public class PulsarTemplateTests {
 		}
 	}
 
-	@Test
-	public void testDefaultConsumer() throws PulsarClientException {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
-			Map<String, Object> config = new HashMap<>();
-			final HashSet<String> strings = new HashSet<String>();
-			strings.add("foobar-012");
-			config.put("topicNames", strings);
-			config.put("subscriptionName", "foobar-sb-012");
-			Map<String, Object> clientConfig = new HashMap<>();
-			clientConfig.put("serviceUrl", pulsar.getPulsarBrokerUrl());
-			final PulsarClient pulsarClient = PulsarClient.builder()
-					.serviceUrl(pulsar.getPulsarBrokerUrl())
-					.build();
-			final DefaultPulsarConsumerFactory<String> pulsarConsumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
-			CountDownLatch latch = new CountDownLatch(1);
-			PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
-			pulsarContainerProperties.setMessageListener(new MessageListener() {
-				@Override
-				public void received(Consumer consumer, Message msg) {
-					latch.countDown();
-				}
-			});
-			pulsarContainerProperties.setSchema(Schema.STRING);
-			DefaultPulsarMessageListenerContainer<String> container = new DefaultPulsarMessageListenerContainer(
-					pulsarConsumerFactory,pulsarContainerProperties);
-			container.start();
-			Map<String, Object> prodConfig = new HashMap<>();
-			prodConfig.put("topicName", "foobar-012");
-			final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, prodConfig);
-			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
-			final CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe");
-			future.thenAccept(m -> System.out.println("Got " + m));
-			try {
-				Thread.sleep(2000);
-				final MessageId messageId = future.get();
-				System.out.println();
-			}
-			catch (InterruptedException | ExecutionException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+
 
 	@Test
 	public void testSendAsync() throws Exception {
