@@ -22,7 +22,6 @@ import org.springframework.util.CollectionUtils;
 public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T> {
 
 	private final Map<String, Object> consumerConfig = new HashMap<>();
-	private final Map<String, Object> clientConfig = new HashMap<>();
 
 	private final List<Consumer<T>> consumers = new ArrayList<>();
 

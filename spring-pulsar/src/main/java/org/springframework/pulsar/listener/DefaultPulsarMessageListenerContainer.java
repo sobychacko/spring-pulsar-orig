@@ -89,7 +89,8 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 	@Override
 	public void stop() {
-
+		System.out.println("STOPPPPPINNNNNGGGG");
+		setRunning(false);
 	}
 
 	@Override
@@ -199,6 +200,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			}
 			publishConsumerStartedEvent();
 			while (isRunning()) {
+				System.out.println("I AM HERE...");
 				Message<T> msg = null;
 				Messages<T> messages = null;
 				try {
@@ -262,6 +264,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 					consumer.negativeAcknowledge(msg);
 				}
 			}
+			System.out.println("NO LONGER RUNNING");
 			try {
 				this.consumer.close();
 			}

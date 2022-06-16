@@ -734,7 +734,7 @@ public class PulsarProperties {
 
 	public static class Listener {
 
-		private PulsarProperties.Schema schema;
+		private PulsarProperties.Schema schema = Schema.STRING;
 
 		public PulsarProperties.Schema getSchema() {
 			return schema;

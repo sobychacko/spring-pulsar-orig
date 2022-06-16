@@ -1,27 +1,20 @@
 package org.springframework.pulsar.core;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.MessageId;
-import org.apache.pulsar.client.api.MessageListener;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer;
-import org.springframework.pulsar.listener.PulsarContainerProperties;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -37,8 +30,6 @@ public class PulsarTemplateTests {
 			testPulsarFunctionality(pulsar.getPulsarBrokerUrl());
 		}
 	}
-
-
 
 	@Test
 	public void testSendAsync() throws Exception {
