@@ -1,4 +1,4 @@
-package experiments;
+package experiments.basic;
 
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -18,9 +18,11 @@ public class PulsarBootApp {
 	public ApplicationRunner runner(PulsarTemplate<String> pulsarTemplate) {
 		pulsarTemplate.setDefaultTopicName("hello-pulsar-exclusive");
 		return args -> {
-			for (int i = 0; i < 100; i ++) {
-				pulsarTemplate.send("This is message " + (i + 1));
-			}
+//			for (int i = 0; i < 100; i ++) {
+//				pulsarTemplate.send("This is message " + (i + 1));
+//			}
+
+			pulsarTemplate.send("This is message ");
 
 		};
 	}

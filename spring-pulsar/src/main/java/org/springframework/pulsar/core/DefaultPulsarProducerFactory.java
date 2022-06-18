@@ -19,6 +19,7 @@ package org.springframework.pulsar.core;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.pulsar.client.api.MessageRouter;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
@@ -27,12 +28,15 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.util.CollectionUtils;
 
 /**
  * @author Soby Chacko
  */
 public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>, DisposableBean {
+
+	protected final LogAccessor logger = new LogAccessor(LogFactory.getLog(this.getClass()));
 
 	private final Map<String, Object> producerConfig = new HashMap<>();
 
@@ -79,6 +83,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 
 	@Override
 	public void destroy() throws Exception {
+		this.logger.info("Closing the producer");
 		this.producer.close();
 	}
 }

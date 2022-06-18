@@ -33,8 +33,6 @@ import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.client.api.TopicMetadata;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PulsarContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer;
 import org.springframework.pulsar.listener.PulsarContainerProperties;
@@ -44,64 +42,59 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 /**
  * @author Soby Chacko
  */
-public class FailoverConsumerTests {
-
-	private static final DockerImageName PULSAR_IMAGE = DockerImageName.parse("apachepulsar/pulsar:2.10.0");
+public class FailoverConsumerTests extends AbstractContainerBaseTest {
 
 	@Test
 	public void testFailOverConsumersOnPartitionedTopic() throws Exception {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
+		PulsarAdmin admin = PulsarAdmin.builder()
+				.serviceHttpUrl(getHttpServiceUrl())
+				.build();
 
-			PulsarAdmin admin = PulsarAdmin.builder()
-					.serviceHttpUrl(pulsar.getHttpServiceUrl())
-					.build();
+		String topicName = "persistent://public/default/my-part-topic-1";
+		int numPartitions = 3;
+		admin.topics().createPartitionedTopic(topicName, numPartitions);
 
-			String topicName = "persistent://public/default/my-part-topic-1";
-			int numPartitions = 3;
-			admin.topics().createPartitionedTopic(topicName, numPartitions);
+		Map<String, Object> config = new HashMap<>();
+		final HashSet<String> topics = new HashSet<>();
+		topics.add("my-part-topic-1");
+		config.put("topicNames", topics);
+		config.put("subscriptionName", "my-part-subscription-1");
+		final PulsarClient pulsarClient = PulsarClient.builder()
+				.serviceUrl(getPulsarBrokerUrl())
+				.build();
+		final DefaultPulsarConsumerFactory<String> pulsarConsumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
+		CountDownLatch latch = new CountDownLatch(3);
+		PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
+		pulsarContainerProperties.setMessageListener(new MessageListener() {
+			@Override
+			public void received(Consumer consumer, Message msg) {
+				latch.countDown();
+			}
+		});
+		pulsarContainerProperties.setSubscriptionType(SubscriptionType.Failover);
+		pulsarContainerProperties.setSchema(Schema.STRING);
+		DefaultPulsarMessageListenerContainer<String> container = new DefaultPulsarMessageListenerContainer(
+				pulsarConsumerFactory, pulsarContainerProperties);
+		container.start();
+		DefaultPulsarMessageListenerContainer<String> container1 = new DefaultPulsarMessageListenerContainer(
+				pulsarConsumerFactory, pulsarContainerProperties);
+		container1.start();
+		DefaultPulsarMessageListenerContainer<String> container2 = new DefaultPulsarMessageListenerContainer(
+				pulsarConsumerFactory, pulsarContainerProperties);
+		container2.start();
+		Map<String, Object> prodConfig = new HashMap<>();
+		prodConfig.put("topicName", "my-part-topic-1");
+		prodConfig.put("messageRoutingMode", MessageRoutingMode.CustomPartition);
+		final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, prodConfig);
+		final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
 
-			Map<String, Object> config = new HashMap<>();
-			final HashSet<String> topics = new HashSet<>();
-			topics.add("my-part-topic-1");
-			config.put("topicNames", topics);
-			config.put("subscriptionName", "my-part-subscription-1");
-			final PulsarClient pulsarClient = PulsarClient.builder()
-					.serviceUrl(pulsar.getPulsarBrokerUrl())
-					.build();
-			final DefaultPulsarConsumerFactory<String> pulsarConsumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
-			CountDownLatch latch = new CountDownLatch(3);
-			PulsarContainerProperties pulsarContainerProperties = new PulsarContainerProperties();
-			pulsarContainerProperties.setMessageListener(new MessageListener() {
-				@Override
-				public void received(Consumer consumer, Message msg) {
-					latch.countDown();
-				}
-			});
-			pulsarContainerProperties.setSubscriptionType(SubscriptionType.Failover);
-			pulsarContainerProperties.setSchema(Schema.STRING);
-			DefaultPulsarMessageListenerContainer<String> container = new DefaultPulsarMessageListenerContainer(
-					pulsarConsumerFactory, pulsarContainerProperties);
-			container.start();
-			DefaultPulsarMessageListenerContainer<String> container1 = new DefaultPulsarMessageListenerContainer(
-					pulsarConsumerFactory, pulsarContainerProperties);
-			container1.start();
-			DefaultPulsarMessageListenerContainer<String> container2 = new DefaultPulsarMessageListenerContainer(
-					pulsarConsumerFactory, pulsarContainerProperties);
-			container2.start();
-			Map<String, Object> prodConfig = new HashMap<>();
-			prodConfig.put("topicName", "my-part-topic-1");
-			prodConfig.put("messageRoutingMode", MessageRoutingMode.CustomPartition);
-			final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(pulsarClient, prodConfig);
-			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
-
-			pulsarTemplate.sendAsync("hello john doe", new FooRouter());
-			pulsarTemplate.sendAsync("hello alice doe", new BarRouter());
-			pulsarTemplate.sendAsync("hello buzz doe", new BuzzRouter());
-			final boolean await = latch.await(10, TimeUnit.SECONDS);
-			assertThat(await).isTrue();
-		}
+		pulsarTemplate.sendAsync("hello john doe", new FooRouter());
+		pulsarTemplate.sendAsync("hello alice doe", new BarRouter());
+		pulsarTemplate.sendAsync("hello buzz doe", new BuzzRouter());
+		final boolean await = latch.await(10, TimeUnit.SECONDS);
+		assertThat(await).isTrue();
 	}
+
 
 	static class FooRouter implements MessageRouter {
 

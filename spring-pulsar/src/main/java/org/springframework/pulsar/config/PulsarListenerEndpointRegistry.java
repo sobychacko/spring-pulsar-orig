@@ -37,9 +37,9 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.lang.Nullable;
 import org.springframework.pulsar.listener.AbstractPulsarMessageListenerContainer;
-import org.springframework.pulsar.support.EndpointHandlerMethod;
 import org.springframework.pulsar.listener.PulsarListenerContainerRegistry;
 import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
+import org.springframework.pulsar.support.EndpointHandlerMethod;
 import org.springframework.util.Assert;
 
 /**
@@ -101,19 +101,21 @@ public class PulsarListenerEndpointRegistry implements PulsarListenerContainerRe
 		Assert.notNull(factory, "Factory must not be null");
 
 		String subscriptionName = endpoint.getSubscriptionName();
+		String id = endpoint.getId();
+
 		Assert.hasText(subscriptionName, "Endpoint id must not be empty");
 
 		synchronized (this.listenerContainers) {
-			Assert.state(!this.listenerContainers.containsKey(subscriptionName),
+			Assert.state(!this.listenerContainers.containsKey(id),
 					"Another endpoint is already registered with id '" + subscriptionName + "'");
 			PulsarMessageListenerContainer container = createListenerContainer(endpoint, factory);
-			this.listenerContainers.put(subscriptionName, container);
+			this.listenerContainers.put(id, container);
 			ConfigurableApplicationContext appContext = this.applicationContext;
 		}
 	}
 
 	protected PulsarMessageListenerContainer createListenerContainer(PulsarListenerEndpoint endpoint,
-															   PulsarListenerContainerFactory<?> factory) {
+																	 PulsarListenerContainerFactory<?> factory) {
 
 		if (endpoint instanceof MethodPulsarListenerEndpoint) {
 			MethodPulsarListenerEndpoint<?> mkle = (MethodPulsarListenerEndpoint<?>) endpoint;

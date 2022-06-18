@@ -28,6 +28,9 @@ import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
 public interface PulsarListenerEndpoint {
 
 	@Nullable
+	String getId();
+
+	@Nullable
 	String getSubscriptionName();
 
 	Collection<String> getTopics();

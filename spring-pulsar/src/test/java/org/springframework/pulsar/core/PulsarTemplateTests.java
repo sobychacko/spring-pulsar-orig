@@ -29,89 +29,77 @@ import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PulsarContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
  * @author Soby Chacko
  */
-public class PulsarTemplateTests {
+public class PulsarTemplateTests extends AbstractContainerBaseTest {
 
 	public static final String TEST_TOPIC = "test_topic";
-	private static final DockerImageName PULSAR_IMAGE = DockerImageName.parse("apachepulsar/pulsar:2.10.0");
 
 	@Test
 	public void testUsage() throws Exception {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
-			testPulsarFunctionality(pulsar.getPulsarBrokerUrl());
-		}
+		testPulsarFunctionality(getPulsarBrokerUrl());
 	}
 
 	@Test
 	public void testSendAsync() throws Exception {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
-			Map<String, Object> config = new HashMap<>();
-			config.put("topicName", "foo-bar-123");
-			Map<String, Object> clientConfig = new HashMap<>();
-			clientConfig.put("serviceUrl", pulsar.getPulsarBrokerUrl());
-			try (
-					PulsarClient client = PulsarClient.builder()
-							.loadConf(clientConfig)
-							.build();
-					Consumer<String> consumer = client.newConsumer(Schema.STRING)
-							.topic("foo-bar-123")
-							.subscriptionName("xyz-test-subs-123")
-							.subscribe()
-			) {
-				final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(client, config);
-				final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
-				final CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe");
-				future.thenAccept(m -> System.out.println("Got " + m));
-				try {
-					Thread.sleep(2000);
-					final MessageId messageId = future.get();
-					System.out.println();
-				}
-				catch (InterruptedException | ExecutionException e) {
-					e.printStackTrace();
-				}
-				CompletableFuture<Message<String>> future0 = consumer.receiveAsync();
-				Message<String> message = future0.get(5, TimeUnit.SECONDS);
-				assertThat(new String(message.getData()))
-						.isEqualTo("hello john doe");
+		Map<String, Object> config = new HashMap<>();
+		config.put("topicName", "foo-bar-123");
+		Map<String, Object> clientConfig = new HashMap<>();
+		clientConfig.put("serviceUrl", getPulsarBrokerUrl());
+		try (
+				PulsarClient client = PulsarClient.builder()
+						.loadConf(clientConfig)
+						.build();
+				Consumer<String> consumer = client.newConsumer(Schema.STRING)
+						.topic("foo-bar-123")
+						.subscriptionName("xyz-test-subs-123")
+						.subscribe()
+		) {
+			final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(client, config);
+			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
+			final CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe");
+			future.thenAccept(m -> System.out.println("Got " + m));
+			try {
+				Thread.sleep(2000);
+				final MessageId messageId = future.get();
+				System.out.println();
 			}
+			catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+			CompletableFuture<Message<String>> future0 = consumer.receiveAsync();
+			Message<String> message = future0.get(5, TimeUnit.SECONDS);
+			assertThat(new String(message.getData()))
+					.isEqualTo("hello john doe");
 		}
 	}
 
 	@Test
 	public void testSendSync() throws Exception {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
-			Map<String, Object> config = new HashMap<>();
-			config.put("topicName", "foo-bar-123");
-			Map<String, Object> clientConfig = new HashMap<>();
-			clientConfig.put("serviceUrl", pulsar.getPulsarBrokerUrl());
-			try (
-					PulsarClient client = PulsarClient.builder()
-							.loadConf(clientConfig)
-							.build();
-					Consumer<String> consumer = client.newConsumer(Schema.STRING)
-							.topic("foo-bar-123")
-							.subscriptionName("xyz-test-subs-123")
-							.subscribe();
-			) {
-				final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(client, config);
-				final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
-				final MessageId messageId = pulsarTemplate.send("hello john doe");
-				CompletableFuture<Message<String>> future0 = consumer.receiveAsync();
-				Message<String> message = future0.get(5, TimeUnit.SECONDS);
-				assertThat(new String(message.getData()))
-						.isEqualTo("hello john doe");
-			}
+		Map<String, Object> config = new HashMap<>();
+		config.put("topicName", "foo-bar-123");
+		Map<String, Object> clientConfig = new HashMap<>();
+		clientConfig.put("serviceUrl", getPulsarBrokerUrl());
+		try (
+				PulsarClient client = PulsarClient.builder()
+						.loadConf(clientConfig)
+						.build();
+				Consumer<String> consumer = client.newConsumer(Schema.STRING)
+						.topic("foo-bar-123")
+						.subscriptionName("xyz-test-subs-123")
+						.subscribe();
+		) {
+			final DefaultPulsarProducerFactory<String> pulsarProducerFactory = new DefaultPulsarProducerFactory<>(client, config);
+			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
+			final MessageId messageId = pulsarTemplate.send("hello john doe");
+			CompletableFuture<Message<String>> future0 = consumer.receiveAsync();
+			Message<String> message = future0.get(5, TimeUnit.SECONDS);
+			assertThat(new String(message.getData()))
+					.isEqualTo("hello john doe");
 		}
 	}
 

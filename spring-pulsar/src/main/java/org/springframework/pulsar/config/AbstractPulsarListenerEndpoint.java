@@ -49,6 +49,8 @@ public abstract class AbstractPulsarListenerEndpoint<K> implements PulsarListene
 
 	private String subscriptionName;
 
+	private String id;
+
 	private final Collection<String> topics = new ArrayList<>();
 
 	private BeanFactory beanFactory;
@@ -110,6 +112,15 @@ public abstract class AbstractPulsarListenerEndpoint<K> implements PulsarListene
 	@Override
 	public String getSubscriptionName() {
 		return this.subscriptionName;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	@Override
+	public String getId() {
+		return this.id;
 	}
 
 	public void setTopics(String... topics) {

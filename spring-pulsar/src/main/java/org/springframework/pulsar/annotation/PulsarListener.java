@@ -34,6 +34,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 @Documented
 public @interface PulsarListener {
 
+	String id() default "";
+
 	String subscriptionName() default "";
 
 	String containerFactory() default "";

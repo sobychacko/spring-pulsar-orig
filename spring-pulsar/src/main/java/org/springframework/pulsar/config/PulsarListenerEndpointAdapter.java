@@ -27,6 +27,11 @@ import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
  */
 public class PulsarListenerEndpointAdapter implements PulsarListenerEndpoint {
 	@Override
+	public String getId() {
+		return null;
+	}
+
+	@Override
 	public String getSubscriptionName() {
 		return null;
 	}

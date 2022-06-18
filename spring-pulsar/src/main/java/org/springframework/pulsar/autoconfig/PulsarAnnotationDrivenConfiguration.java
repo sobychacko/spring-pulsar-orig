@@ -17,6 +17,7 @@
 package org.springframework.pulsar.autoconfig;
 
 import org.apache.pulsar.client.api.Schema;
+import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -49,9 +50,14 @@ public class PulsarAnnotationDrivenConfiguration {
 			ObjectProvider<PulsarConsumerFactory<Object>> pulsarConsumerFactory) {
 		PulsarListenerContainerFactoryImpl<Object, Object> factory = new PulsarListenerContainerFactoryImpl<>();
 
-		factory.setPulsarConsumerFactory(pulsarConsumerFactory.getIfAvailable());
+		final PulsarConsumerFactory<Object> pulsarConsumerFactory1 = pulsarConsumerFactory.getIfAvailable();
+		factory.setPulsarConsumerFactory(pulsarConsumerFactory1);
 
 		final PulsarContainerProperties containerProperties = factory.getContainerProperties();
+
+		if (pulsarConsumerFactory1.getConsumerConfig().containsKey("subscriptionType")) {
+			containerProperties.setSubscriptionType((SubscriptionType) pulsarConsumerFactory1.getConsumerConfig().get("subscriptionType"));
+		}
 
 		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 		PulsarProperties.Listener properties = this.pulsarProperties.getListener();

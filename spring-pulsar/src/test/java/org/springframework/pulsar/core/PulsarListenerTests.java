@@ -20,11 +20,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PulsarContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.WebApplicationType;
@@ -37,37 +33,24 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 /**
  * @author Soby Chacko
  */
-public class PulsarListenerTests {
+public class PulsarListenerTests extends AbstractContainerBaseTest {
 
-	private static final DockerImageName PULSAR_IMAGE = DockerImageName.parse("apachepulsar/pulsar:2.10.0");
-	static PulsarContainer pulsar;
 	static CountDownLatch latch1 = new CountDownLatch(1);
 	static CountDownLatch latch2 = new CountDownLatch(10);
-
-	@BeforeAll
-	public static void setUp() {
-		pulsar = new PulsarContainer(PULSAR_IMAGE);
-		pulsar.start();
-	}
-
-	@AfterAll
-	public static void tearDown() {
-		pulsar.stop();
-	}
 
 	@Test
 	void testBasicListener() throws Exception {
 		SpringApplication app = new SpringApplication(BasicListenerConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		try (ConfigurableApplicationContext context = app.run("--spring.pulsar.client.serviceUrl=" + pulsar.getPulsarBrokerUrl())) {
+		try (ConfigurableApplicationContext context = app.run("--spring.pulsar.client.serviceUrl=" + getPulsarBrokerUrl())) {
 			@SuppressWarnings("unchecked")
 			final PulsarTemplate<String> pulsarTemplate = context.getBean(PulsarTemplate.class);
 			pulsarTemplate.setDefaultTopicName("hello-pulsar-exclusive");
 			pulsarTemplate.send("John Doe");
-			final boolean await = latch1.await(120, TimeUnit.SECONDS);
+			System.out.println("waiting at the latch");
+			final boolean await = latch1.await(20, TimeUnit.SECONDS);
 			assertThat(await).isTrue();
-
 		}
 	}
 
@@ -76,7 +59,7 @@ public class PulsarListenerTests {
 		SpringApplication app = new SpringApplication(BatchListenerConfig.class);
 		app.setWebApplicationType(WebApplicationType.NONE);
 
-		try (ConfigurableApplicationContext context = app.run("--spring.pulsar.client.serviceUrl=" + pulsar.getPulsarBrokerUrl())) {
+		try (ConfigurableApplicationContext context = app.run("--spring.pulsar.client.serviceUrl=" + getPulsarBrokerUrl())) {
 			@SuppressWarnings("unchecked")
 			final PulsarTemplate<String> pulsarTemplate = context.getBean(PulsarTemplate.class);
 			pulsarTemplate.setDefaultTopicName("hello-pulsar-exclusive");
@@ -85,14 +68,13 @@ public class PulsarListenerTests {
 			}
 			final boolean await = latch2.await(10, TimeUnit.SECONDS);
 			assertThat(await).isTrue();
-
 		}
 	}
 
 	@EnableAutoConfiguration
 	public static class BasicListenerConfig {
 
-		@PulsarListener(subscriptionName = "test-exclusive-sub", topics = "hello-pulsar-exclusive")
+		@PulsarListener(subscriptionName = "test-exclusive-sub-1", topics = "hello-pulsar-exclusive")
 		public void listen(String foo) {
 			System.out.println("Message Received from basic: " + foo);
 			latch1.countDown();
@@ -102,7 +84,7 @@ public class PulsarListenerTests {
 	@EnableAutoConfiguration
 	public static class BatchListenerConfig {
 
-		@PulsarListener(subscriptionName = "test-exclusive-sub", topics = "hello-pulsar-exclusive", batch = "true")
+		@PulsarListener(subscriptionName = "test-exclusive-sub-2", topics = "hello-pulsar-exclusive", batch = "true")
 		public void listen(List<String> foo) {
 			System.out.println("Message Received from batch: " + foo);
 			System.out.println("Message Received from batch: " + foo.size());

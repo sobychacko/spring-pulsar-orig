@@ -108,8 +108,16 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 	@Override
 	public void stop() {
-		System.out.println("STOPPPPPINNNNNGGGG");
 		setRunning(false);
+		System.out.println("Pausing this consumer.");
+		this.listenerConsumer.consumer.pause();
+		try {
+			System.out.println("Closing this consumer.");
+			this.listenerConsumer.consumer.close();
+		}
+		catch (PulsarClientException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -183,18 +191,6 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 				this.batchMessageHandler = null;
 			}
 
-		}
-
-		@Override
-		public boolean isLongLived() {
-			return true;
-		}
-
-		@Override
-		@SuppressWarnings({"unchecked", "rawtypes"})
-		public void run() {
-			publishConsumerStartingEvent();
-			this.consumerThread = Thread.currentThread();
 			try {
 				final PulsarContainerProperties pulsarContainerProperties = getPulsarContainerProperties();
 				if (this.containerProperties.isBatchReceive() || this.containerProperties.isBatchAsyncReceive()) {
@@ -217,9 +213,22 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			catch (PulsarClientException e) {
 				e.printStackTrace(); //TODO - Proper logging
 			}
+
+		}
+
+		@Override
+		public boolean isLongLived() {
+			return true;
+		}
+
+		@Override
+		@SuppressWarnings({"unchecked", "rawtypes"})
+		public void run() {
+			publishConsumerStartingEvent();
+			this.consumerThread = Thread.currentThread();
+
 			publishConsumerStartedEvent();
 			while (isRunning()) {
-				System.out.println("I AM HERE...");
 				Message<T> msg = null;
 				Messages<T> messages = null;
 				try {
@@ -283,8 +292,8 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 					consumer.negativeAcknowledge(msg);
 				}
 			}
-			System.out.println("NO LONGER RUNNING");
 			try {
+				logger.info("Closing Consumer: " + this.consumer);
 				this.consumer.close();
 			}
 			catch (PulsarClientException e) {

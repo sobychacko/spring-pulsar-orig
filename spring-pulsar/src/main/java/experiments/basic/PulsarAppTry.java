@@ -1,8 +1,7 @@
-package experiments;
+package experiments.basic;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.pulsar.annotation.PulsarListener;
 
 @SpringBootApplication
 public class PulsarAppTry {
@@ -53,10 +52,10 @@ public class PulsarAppTry {
 //		return pulsarListenerContainerFactory;
 //	}
 
-	@PulsarListener(subscriptionName = "hello-pulsar-listener", topics = "foo-1")
-	public void listen(String foo) {
-		System.out.println("Message Received: " + foo);
-	}
+//	@PulsarListener(subscriptionName = "hello-pulsar-listener", topics = "foo-1")
+//	public void listen(String foo) {
+//		System.out.println("Message Received: " + foo);
+//	}
 
 //	@Configuration(proxyBeanMethods = false)
 //	@EnablePulsar

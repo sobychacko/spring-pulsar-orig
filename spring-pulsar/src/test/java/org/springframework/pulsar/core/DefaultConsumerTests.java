@@ -37,22 +37,20 @@ import org.springframework.pulsar.listener.PulsarContainerProperties;
 /**
  * @author Soby Chacko
  */
-public class DefaultConsumerTests {
+public class DefaultConsumerTests extends AbstractContainerBaseTest {
 
-	public static final String TEST_TOPIC = "test_topic";
-	private static final DockerImageName PULSAR_IMAGE = DockerImageName.parse("apachepulsar/pulsar:2.10.0");
 
 	@Test
 	public void testDefaultConsumer() throws Exception {
-		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
-			pulsar.start();
+//		try (PulsarContainer pulsar = new PulsarContainer(PULSAR_IMAGE)) {
+//			pulsar.start();
 			Map<String, Object> config = new HashMap<>();
 			final HashSet<String> strings = new HashSet<String>();
 			strings.add("foobar-012");
 			config.put("topicNames", strings);
 			config.put("subscriptionName", "foobar-sb-012");
 			final PulsarClient pulsarClient = PulsarClient.builder()
-					.serviceUrl(pulsar.getPulsarBrokerUrl())
+					.serviceUrl(getPulsarBrokerUrl())
 					.build();
 			final DefaultPulsarConsumerFactory<String> pulsarConsumerFactory = new DefaultPulsarConsumerFactory<>(pulsarClient, config);
 			CountDownLatch latch = new CountDownLatch(1);
@@ -69,7 +67,10 @@ public class DefaultConsumerTests {
 			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
 			final CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe");
 			latch.await(10, TimeUnit.SECONDS);
-		}
+//		}
 	}
+
+
+
 
 }

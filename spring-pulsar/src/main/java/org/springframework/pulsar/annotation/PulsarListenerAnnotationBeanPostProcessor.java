@@ -320,7 +320,7 @@ public class PulsarListenerAnnotationBeanPostProcessor<K, V> implements BeanPost
 		endpoint.setBean(bean);
 		endpoint.setMessageHandlerMethodFactory(this.messageHandlerMethodFactory);
 		endpoint.setSubscriptionName(getEndpointSubscriptionName(PulsarListener));
-
+		endpoint.setId(getEndpointId(PulsarListener));
 		endpoint.setTopics(topics);
 
 
@@ -393,7 +393,16 @@ public class PulsarListenerAnnotationBeanPostProcessor<K, V> implements BeanPost
 
 	private String getEndpointSubscriptionName(PulsarListener pulsarListener) {
 		if (StringUtils.hasText(pulsarListener.subscriptionName())) {
-			return resolveExpressionAsString(pulsarListener.subscriptionName(), "id");
+			return resolveExpressionAsString(pulsarListener.subscriptionName(), "subscriptionName");
+		}
+		else {
+			return GENERATED_ID_PREFIX + this.counter.getAndIncrement();
+		}
+	}
+
+	private String getEndpointId(PulsarListener pulsarListener) {
+		if (StringUtils.hasText(pulsarListener.id())) {
+			return resolveExpressionAsString(pulsarListener.id(), "id");
 		}
 		else {
 			return GENERATED_ID_PREFIX + this.counter.getAndIncrement();
