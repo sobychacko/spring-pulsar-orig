@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import io.micrometer.common.util.StringUtils;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.ConsumerBuilder;
@@ -34,6 +33,7 @@ import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.pulsar.listener.PulsarContainerProperties;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
@@ -80,7 +80,7 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 			if (!strings.isEmpty()) {
 				this.consumerConfig.put("topicNames", strings);
 			}
-			if (StringUtils.isNotEmpty(properties.getSubscriptionName())) {
+			if (StringUtils.hasText(properties.getSubscriptionName())) {
 				this.consumerConfig.put("subscriptionName", properties.getSubscriptionName());
 			}
 

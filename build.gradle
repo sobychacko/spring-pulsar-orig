@@ -53,7 +53,7 @@ ext {
 	junitJupiterVersion = '5.8.2'
 	pulsarVersion = '2.10.0'
 	log4jVersion = '2.17.2'
-	micrometerVersion = '2.0.0-SNAPSHOT'
+//	micrometerVersion = '2.0.0-SNAPSHOT'
 	mockitoVersion = '4.0.0'
 	reactorVersion = '2020.0.17'
 	springBootVersion = '3.0.0-SNAPSHOT' // docs module
@@ -262,7 +262,7 @@ project ('spring-pulsar') {
 		optionalApi "com.jayway.jsonpath:json-path:$jaywayJsonPathVersion"
 
 		optionalApi 'io.projectreactor:reactor-core'
-		optionalApi "io.micrometer:micrometer-core:$micrometerVersion"
+//		optionalApi "io.micrometer:micrometer-core:$micrometerVersion"
 
 		testImplementation 'io.projectreactor:reactor-test'
 		testImplementation "org.mockito:mockito-junit-jupiter:$mockitoVersion"
