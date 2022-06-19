@@ -42,7 +42,7 @@ public class PulsarContainerProperties extends PulsarConsumerProperties {
 
 	private Object messageListener;
 	private AsyncListenableTaskExecutor consumerTaskExecutor;
-	private SubscriptionType subscriptionType = SubscriptionType.Exclusive;
+	private SubscriptionType subscriptionType;
 
 	private int maxNumMessages = -1;
 	private int maxNumBytes = 10 * 1024 * 1024;

@@ -31,15 +31,9 @@ import org.springframework.pulsar.listener.PulsarContainerProperties;
  */
 public interface PulsarConsumerFactory<T> {
 
-	default Consumer<T> createConsumer(Schema<T> schema) throws PulsarClientException {
-		return createConsumer(schema, SubscriptionType.Exclusive);
-	}
+	Consumer<T> createConsumer(Schema<T> schema) throws PulsarClientException;
 
-	Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType) throws PulsarClientException;
-
-	Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType, PulsarContainerProperties properties) throws PulsarClientException;
-
-	Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException;
+	Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException;
 
 	Map<String, Object> getConsumerConfig();
 }

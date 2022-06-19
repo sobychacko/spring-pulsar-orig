@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.listener;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +29,7 @@ import org.apache.pulsar.client.api.MessageListener;
 import org.apache.pulsar.client.api.Messages;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
+import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.AsyncListenableTaskExecutor;
@@ -37,6 +40,7 @@ import org.springframework.pulsar.event.ConsumerFailedToStartEvent;
 import org.springframework.pulsar.event.ConsumerStartedEvent;
 import org.springframework.pulsar.event.ConsumerStartingEvent;
 import org.springframework.scheduling.SchedulingAwareRunnable;
+import org.springframework.util.StringUtils;
 import org.springframework.util.concurrent.ListenableFuture;
 
 /**
@@ -131,6 +135,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 	/**
 	 * Return the bean name.
+	 *
 	 * @return the bean name.
 	 */
 	@Nullable
@@ -195,19 +200,62 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 				final PulsarContainerProperties pulsarContainerProperties = getPulsarContainerProperties();
 				if (this.containerProperties.isBatchReceive() || this.containerProperties.isBatchAsyncReceive()) {
 
+					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					if (subscriptionType != null) {
+						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
+							final PulsarConsumerFactory<? super T> pulsarConsumerFactory = getPulsarConsumerFactory();
+							pulsarConsumerFactory.getConsumerConfig().put("subscriptionType", subscriptionType);
+							final String[] topics1 = pulsarContainerProperties.getTopics();
+							assert topics1 != null;
+							final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
+							if (!strings.isEmpty()) {
+								pulsarConsumerFactory.getConsumerConfig().put("topicNames", strings);
+							}
+							if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+								pulsarConsumerFactory.getConsumerConfig().put("subscriptionName",
+										pulsarContainerProperties.getSubscriptionName());
+							}
+						}
+					}
+
+
+
 					final BatchReceivePolicy batchReceivePolicy = BatchReceivePolicy.DEFAULT_POLICY;
 
 					this.consumer = getPulsarConsumerFactory().createConsumer(
-							(Schema) pulsarContainerProperties.getSchema(), pulsarContainerProperties.getSubscriptionType(),
+							(Schema) pulsarContainerProperties.getSchema(),
 							batchReceivePolicy);
 				}
-				else if (this.containerProperties.isAsyncReceive()){
+				else if (this.containerProperties.isAsyncReceive()) {
+					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					if (subscriptionType != null) {
+						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
+							getPulsarConsumerFactory().getConsumerConfig().put("subscriptionType", subscriptionType);
+						}
+					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
-							(Schema) pulsarContainerProperties.getSchema(), pulsarContainerProperties.getSubscriptionType());
+							(Schema) pulsarContainerProperties.getSchema());
 				}
 				else {
+					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					if (subscriptionType != null) {
+						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
+							final PulsarConsumerFactory<? super T> pulsarConsumerFactory = getPulsarConsumerFactory();
+							pulsarConsumerFactory.getConsumerConfig().put("subscriptionType", subscriptionType);
+							final String[] topics1 = pulsarContainerProperties.getTopics();
+							assert topics1 != null;
+							final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
+							if (!strings.isEmpty()) {
+								pulsarConsumerFactory.getConsumerConfig().put("topicNames", strings);
+							}
+							if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+								pulsarConsumerFactory.getConsumerConfig().put("subscriptionName",
+										pulsarContainerProperties.getSubscriptionName());
+							}
+						}
+					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
-							(Schema) pulsarContainerProperties.getSchema(), pulsarContainerProperties.getSubscriptionType(), pulsarContainerProperties);
+							(Schema) pulsarContainerProperties.getSchema());
 				}
 			}
 			catch (PulsarClientException e) {

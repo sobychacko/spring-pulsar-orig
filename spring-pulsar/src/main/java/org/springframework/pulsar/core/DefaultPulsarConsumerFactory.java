@@ -17,9 +17,7 @@
 package org.springframework.pulsar.core;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -29,11 +27,8 @@ import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
-import org.apache.pulsar.client.api.SubscriptionType;
 
-import org.springframework.pulsar.listener.PulsarContainerProperties;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
@@ -54,10 +49,9 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	}
 
 	@Override
-	public Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType) throws PulsarClientException {
+	public Consumer<T> createConsumer(Schema<T> schema) throws PulsarClientException {
 
 		final ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
-		consumerBuilder.subscriptionType(subscriptionType);
 
 		if (!CollectionUtils.isEmpty(this.consumerConfig)) {
 			consumerBuilder.loadConf(this.consumerConfig);
@@ -68,38 +62,9 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	}
 
 	@Override
-	public Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType, PulsarContainerProperties properties) throws PulsarClientException {
+	public Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException {
 
 		final ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
-		consumerBuilder.subscriptionType(subscriptionType);
-
-		final String[] topics1 = properties.getTopics();
-		assert topics1 != null;
-		final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-		synchronized (this.consumerConfig) {
-			if (!strings.isEmpty()) {
-				this.consumerConfig.put("topicNames", strings);
-			}
-			if (StringUtils.hasText(properties.getSubscriptionName())) {
-				this.consumerConfig.put("subscriptionName", properties.getSubscriptionName());
-			}
-
-
-			if (!CollectionUtils.isEmpty(this.consumerConfig)) {
-				consumerBuilder.loadConf(this.consumerConfig);
-			}
-			Consumer<T> consumer = consumerBuilder.subscribe();
-			consumers.add(consumer);
-			return consumer;
-		}
-	}
-
-
-	@Override
-	public Consumer<T> createConsumer(Schema<T> schema, SubscriptionType subscriptionType, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException {
-
-		final ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
-		consumerBuilder.subscriptionType(subscriptionType);
 		if (!CollectionUtils.isEmpty(this.consumerConfig)) {
 			consumerBuilder.loadConf(this.consumerConfig);
 		}

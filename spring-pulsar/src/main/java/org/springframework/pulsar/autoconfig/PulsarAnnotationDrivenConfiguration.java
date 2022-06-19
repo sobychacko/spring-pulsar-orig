@@ -55,9 +55,9 @@ public class PulsarAnnotationDrivenConfiguration {
 
 		final PulsarContainerProperties containerProperties = factory.getContainerProperties();
 
-		if (pulsarConsumerFactory1.getConsumerConfig().containsKey("subscriptionType")) {
-			containerProperties.setSubscriptionType((SubscriptionType) pulsarConsumerFactory1.getConsumerConfig().get("subscriptionType"));
-		}
+//		if (pulsarConsumerFactory1.getConsumerConfig().containsKey("subscriptionType")) {
+//			containerProperties.setSubscriptionType((SubscriptionType) pulsarConsumerFactory1.getConsumerConfig().get("subscriptionType"));
+//		}
 
 		PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
 		PulsarProperties.Listener properties = this.pulsarProperties.getListener();
