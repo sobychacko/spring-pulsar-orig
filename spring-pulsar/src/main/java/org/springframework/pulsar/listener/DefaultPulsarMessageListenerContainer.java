@@ -17,7 +17,9 @@
 package org.springframework.pulsar.listener;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -201,61 +203,62 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 				if (this.containerProperties.isBatchReceive() || this.containerProperties.isBatchAsyncReceive()) {
 
 					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					final Map<String, Object> propertiesToOverride = new HashMap<>();
 					if (subscriptionType != null) {
-						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
-							final PulsarConsumerFactory<? super T> pulsarConsumerFactory = getPulsarConsumerFactory();
-							pulsarConsumerFactory.getConsumerConfig().put("subscriptionType", subscriptionType);
-							final String[] topics1 = pulsarContainerProperties.getTopics();
-							assert topics1 != null;
-							final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-							if (!strings.isEmpty()) {
-								pulsarConsumerFactory.getConsumerConfig().put("topicNames", strings);
-							}
-							if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
-								pulsarConsumerFactory.getConsumerConfig().put("subscriptionName",
-										pulsarContainerProperties.getSubscriptionName());
-							}
-						}
+						propertiesToOverride.put("subscriptionType", subscriptionType);
 					}
-
+					final String[] topics1 = pulsarContainerProperties.getTopics();
+					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
+					if (!strings.isEmpty()) {
+						propertiesToOverride.put("topicNames", strings);
+					}
+					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+						propertiesToOverride.put("subscriptionName",
+								pulsarContainerProperties.getSubscriptionName());
+					}
 
 
 					final BatchReceivePolicy batchReceivePolicy = BatchReceivePolicy.DEFAULT_POLICY;
 
 					this.consumer = getPulsarConsumerFactory().createConsumer(
 							(Schema) pulsarContainerProperties.getSchema(),
-							batchReceivePolicy);
+							batchReceivePolicy, propertiesToOverride);
 				}
 				else if (this.containerProperties.isAsyncReceive()) {
 					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					final Map<String, Object> propertiesToOverride = new HashMap<>();
 					if (subscriptionType != null) {
-						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
-							getPulsarConsumerFactory().getConsumerConfig().put("subscriptionType", subscriptionType);
-						}
+						propertiesToOverride.put("subscriptionType", subscriptionType);
+					}
+					final String[] topics1 = pulsarContainerProperties.getTopics();
+					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
+					if (!strings.isEmpty()) {
+						propertiesToOverride.put("topicNames", strings);
+					}
+					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+						propertiesToOverride.put("subscriptionName",
+								pulsarContainerProperties.getSubscriptionName());
 					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
-							(Schema) pulsarContainerProperties.getSchema());
+							(Schema) pulsarContainerProperties.getSchema(), propertiesToOverride);
 				}
 				else {
 					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+					final Map<String, Object> propertiesToOverride = new HashMap<>();
 					if (subscriptionType != null) {
-						synchronized (getPulsarConsumerFactory().getConsumerConfig()) {
-							final PulsarConsumerFactory<? super T> pulsarConsumerFactory = getPulsarConsumerFactory();
-							pulsarConsumerFactory.getConsumerConfig().put("subscriptionType", subscriptionType);
-							final String[] topics1 = pulsarContainerProperties.getTopics();
-							assert topics1 != null;
-							final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-							if (!strings.isEmpty()) {
-								pulsarConsumerFactory.getConsumerConfig().put("topicNames", strings);
-							}
-							if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
-								pulsarConsumerFactory.getConsumerConfig().put("subscriptionName",
-										pulsarContainerProperties.getSubscriptionName());
-							}
-						}
+						propertiesToOverride.put("subscriptionType", subscriptionType);
+					}
+					final String[] topics1 = pulsarContainerProperties.getTopics();
+					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
+					if (!strings.isEmpty()) {
+						propertiesToOverride.put("topicNames", strings);
+					}
+					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+						propertiesToOverride.put("subscriptionName",
+								pulsarContainerProperties.getSubscriptionName());
 					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
-							(Schema) pulsarContainerProperties.getSchema());
+							(Schema) pulsarContainerProperties.getSchema(), propertiesToOverride);
 				}
 			}
 			catch (PulsarClientException e) {

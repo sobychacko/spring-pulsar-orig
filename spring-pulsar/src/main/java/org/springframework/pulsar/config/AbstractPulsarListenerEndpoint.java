@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Properties;
 
 import org.apache.commons.logging.LogFactory;
+import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -48,6 +49,8 @@ public abstract class AbstractPulsarListenerEndpoint<K> implements PulsarListene
 	private final LogAccessor logger = new LogAccessor(LogFactory.getLog(getClass()));
 
 	private String subscriptionName;
+
+	private SubscriptionType subscriptionType;
 
 	private String id;
 
@@ -185,5 +188,11 @@ public abstract class AbstractPulsarListenerEndpoint<K> implements PulsarListene
 	}
 
 
+	public SubscriptionType getSubscriptionType() {
+		return subscriptionType;
+	}
 
+	public void setSubscriptionType(SubscriptionType subscriptionType) {
+		this.subscriptionType = subscriptionType;
+	}
 }

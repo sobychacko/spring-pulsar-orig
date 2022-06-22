@@ -39,6 +39,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.LogFactory;
+import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
@@ -89,7 +90,33 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.Validator;
 
 /**
+ * Bean post-processor that registers methods annotated with {@link PulsarListener}
+ * to be invoked by a Pulsar message listener container created under the covers
+ * by a {@link org.springframework.pulsar.config.PulsarListenerContainerFactory}
+ * according to the parameters of the annotation.
+ *
+ * <p>Annotated methods can use flexible arguments as defined by {@link PulsarListener}.
+ *
+ * <p>This post-processor is automatically registered by Spring's {@link EnablePulsar}
+ * annotation.
+ *
+ * <p>Auto-detect any {@link PulsarListenerConfigurer} instances in the container,
+ * allowing for customization of the registry to be used, the default container
+ * factory or for fine-grained control over endpoints registration. See
+ * {@link EnablePulsar} Javadoc for complete usage details.
+ *
+ * @param <K> the key type.
+ * @param <V> the value type.
+ *
  * @author Soby Chacko
+ *
+ * @see PulsarListener
+ * @see EnablePulsar
+ * @see PulsarListenerConfigurer
+ * @see PulsarListenerEndpointRegistrar
+ * @see PulsarListenerEndpointRegistry
+ * @see org.springframework.pulsar.config.PulsarListenerEndpoint
+ * @see MethodPulsarListenerEndpoint
  */
 public class PulsarListenerAnnotationBeanPostProcessor<K, V> implements BeanPostProcessor, Ordered, ApplicationContextAware, InitializingBean, SmartInitializingSingleton {
 
@@ -315,22 +342,23 @@ public class PulsarListenerAnnotationBeanPostProcessor<K, V> implements BeanPost
 	}
 
 	private void processPulsarListenerAnnotation(MethodPulsarListenerEndpoint<?> endpoint,
-												 PulsarListener PulsarListener, Object bean, String[] topics) {
+												 PulsarListener pulsarListener, Object bean, String[] topics) {
 
 		endpoint.setBean(bean);
 		endpoint.setMessageHandlerMethodFactory(this.messageHandlerMethodFactory);
-		endpoint.setSubscriptionName(getEndpointSubscriptionName(PulsarListener));
-		endpoint.setId(getEndpointId(PulsarListener));
+		endpoint.setSubscriptionName(getEndpointSubscriptionName(pulsarListener));
+		endpoint.setId(getEndpointId(pulsarListener));
 		endpoint.setTopics(topics);
+		endpoint.setSubscriptionType(getEndpointSubscriptionType(pulsarListener));
 
 
-		String autoStartup = PulsarListener.autoStartup();
+		String autoStartup = pulsarListener.autoStartup();
 		if (StringUtils.hasText(autoStartup)) {
 			endpoint.setAutoStartup(resolveExpressionAsBoolean(autoStartup, "autoStartup"));
 		}
-		resolvePulsarProperties(endpoint, PulsarListener.properties());
-		if (StringUtils.hasText(PulsarListener.batch())) {
-			endpoint.setBatchListener(Boolean.parseBoolean(PulsarListener.batch()));
+		resolvePulsarProperties(endpoint, pulsarListener.properties());
+		if (StringUtils.hasText(pulsarListener.batch())) {
+			endpoint.setBatchListener(Boolean.parseBoolean(pulsarListener.batch()));
 		}
 		endpoint.setBeanFactory(this.beanFactory);
 	}
@@ -398,6 +426,20 @@ public class PulsarListenerAnnotationBeanPostProcessor<K, V> implements BeanPost
 		else {
 			return GENERATED_ID_PREFIX + this.counter.getAndIncrement();
 		}
+	}
+
+	private SubscriptionType getEndpointSubscriptionType(PulsarListener pulsarListener) {
+		final String subscriptionType = pulsarListener.subscriptionType().toLowerCase();
+		if (StringUtils.hasText(subscriptionType)) {
+			return switch (subscriptionType) {
+				case "exclusive" -> SubscriptionType.Exclusive;
+				case "failover" -> SubscriptionType.Failover;
+				case "shared" -> SubscriptionType.Shared;
+				case "key_shared" -> SubscriptionType.Key_Shared;
+				default -> SubscriptionType.Exclusive;
+			};
+		}
+		return null;
 	}
 
 	private String getEndpointId(PulsarListener pulsarListener) {

@@ -36,17 +36,17 @@ public class FailoverConsumerApp {
 		};
 	}
 
-	@PulsarListener(id = "fo-one", subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
+	@PulsarListener(subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
 	public void listen1(String foo) {
 		System.out.println("Message Received 1: " + foo);
 	}
 
-	@PulsarListener(id = "fo-two", subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
+	@PulsarListener(subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
 	public void listen2(String foo) {
 		System.out.println("Message Received 2: " + foo);
 	}
 
-	@PulsarListener(id = "fo-three", subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
+	@PulsarListener(subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
 	public void listen(String foo) {
 		System.out.println("Message Received 3: " + foo);
 	}

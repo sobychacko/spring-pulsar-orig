@@ -19,6 +19,8 @@ package org.springframework.pulsar.config;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.pulsar.client.api.SubscriptionType;
+
 import org.springframework.pulsar.support.MessageConverter;
 import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
 
@@ -26,6 +28,7 @@ import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
  * @author Soby Chacko
  */
 public class PulsarListenerEndpointAdapter implements PulsarListenerEndpoint {
+
 	@Override
 	public String getId() {
 		return null;
@@ -34,6 +37,11 @@ public class PulsarListenerEndpointAdapter implements PulsarListenerEndpoint {
 	@Override
 	public String getSubscriptionName() {
 		return null;
+	}
+
+	@Override
+	public SubscriptionType getSubscriptionType() {
+		return SubscriptionType.Exclusive;
 	}
 
 	@Override

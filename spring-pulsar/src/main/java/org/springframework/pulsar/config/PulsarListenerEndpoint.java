@@ -18,6 +18,8 @@ package org.springframework.pulsar.config;
 
 import java.util.Collection;
 
+import org.apache.pulsar.client.api.SubscriptionType;
+
 import org.springframework.lang.Nullable;
 import org.springframework.pulsar.support.MessageConverter;
 import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
@@ -32,6 +34,9 @@ public interface PulsarListenerEndpoint {
 
 	@Nullable
 	String getSubscriptionName();
+
+	@Nullable
+	SubscriptionType getSubscriptionType();
 
 	Collection<String> getTopics();
 

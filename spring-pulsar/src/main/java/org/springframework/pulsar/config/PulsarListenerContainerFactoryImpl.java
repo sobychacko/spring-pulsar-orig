@@ -18,12 +18,12 @@ package org.springframework.pulsar.config;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+
+import org.apache.pulsar.client.api.SubscriptionType;
 
 import org.springframework.pulsar.listener.DefaultPulsarMessageListenerContainer;
 import org.springframework.pulsar.listener.PulsarContainerProperties;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Soby Chacko
@@ -33,27 +33,28 @@ public class PulsarListenerContainerFactoryImpl<C, T> extends AbstractPulsarList
 	@Override
 	protected DefaultPulsarMessageListenerContainer<T> createContainerInstance(PulsarListenerEndpoint endpoint) {
 
+		PulsarContainerProperties properties = new PulsarContainerProperties();
 		Collection<String> topics = endpoint.getTopics();
-
 
 		if (!topics.isEmpty()) {
 			final String[] topics1 = topics.toArray(new String[0]);
-			Map<String, Object> config = new HashMap<>();
-			final HashSet<String> strings = new HashSet<>(topics);
-			config.put("topicNames", strings);
-			config.put("subscriptionName", endpoint.getSubscriptionName());
-
-
-			PulsarContainerProperties properties = new PulsarContainerProperties(topics1);
-			properties.setSubscriptionName(endpoint.getSubscriptionName());
-			properties.setBatchReceive(endpoint.isBatchListener()); //TODO - ONLY FOR TESTING
-			final Map<String, Object> consumerConfig = getPulsarConsumerFactory().getConsumerConfig();
-			consumerConfig.putAll(config);
-
-			return new DefaultPulsarMessageListenerContainer<T>(getPulsarConsumerFactory(), properties);
+			properties.setTopics(topics1);
 		}
 
-		return null;
+		final String subscriptionName = endpoint.getSubscriptionName();
+
+		if (StringUtils.hasText(subscriptionName)) {
+			properties.setSubscriptionName(endpoint.getSubscriptionName());
+		}
+		if (endpoint.isBatchListener()) {
+			properties.setBatchReceive(endpoint.isBatchListener());
+		}
+		final SubscriptionType subscriptionType = endpoint.getSubscriptionType();
+		if (subscriptionType != null) {
+			properties.setSubscriptionType(subscriptionType);
+		}
+
+		return new DefaultPulsarMessageListenerContainer<T>(getPulsarConsumerFactory(), properties);
 	}
 
 	@Override

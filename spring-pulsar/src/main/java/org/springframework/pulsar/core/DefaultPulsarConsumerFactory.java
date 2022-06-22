@@ -49,12 +49,15 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	}
 
 	@Override
-	public Consumer<T> createConsumer(Schema<T> schema) throws PulsarClientException {
+	public Consumer<T> createConsumer(Schema<T> schema, Map<String, Object> propertiesToOverride) throws PulsarClientException {
 
 		final ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
 
-		if (!CollectionUtils.isEmpty(this.consumerConfig)) {
-			consumerBuilder.loadConf(this.consumerConfig);
+		final Map<String, Object> properties = new HashMap<>(this.consumerConfig);
+		properties.putAll(propertiesToOverride);
+
+		if (!CollectionUtils.isEmpty(properties)) {
+			consumerBuilder.loadConf(properties);
 		}
 		Consumer<T> consumer = consumerBuilder.subscribe();
 		consumers.add(consumer);
@@ -62,11 +65,14 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	}
 
 	@Override
-	public Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException {
+	public Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy, Map<String, Object> propertiesToOverride) throws PulsarClientException {
 
 		final ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
-		if (!CollectionUtils.isEmpty(this.consumerConfig)) {
-			consumerBuilder.loadConf(this.consumerConfig);
+		final Map<String, Object> properties = new HashMap<>(this.consumerConfig);
+		properties.putAll(propertiesToOverride);
+
+		if (!CollectionUtils.isEmpty(properties)) {
+			consumerBuilder.loadConf(properties);
 		}
 
 		consumerBuilder.batchReceivePolicy(batchReceivePolicy);

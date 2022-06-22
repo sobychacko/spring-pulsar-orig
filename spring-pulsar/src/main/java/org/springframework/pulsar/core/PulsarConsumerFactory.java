@@ -22,18 +22,15 @@ import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
-import org.apache.pulsar.client.api.SubscriptionType;
-
-import org.springframework.pulsar.listener.PulsarContainerProperties;
 
 /**
  * @author Soby Chacko
  */
 public interface PulsarConsumerFactory<T> {
 
-	Consumer<T> createConsumer(Schema<T> schema) throws PulsarClientException;
+	Consumer<T> createConsumer(Schema<T> schema, Map<String, Object> propertiesToOverride) throws PulsarClientException;
 
-	Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy) throws PulsarClientException;
+	Consumer<T> createConsumer(Schema<T> schema, BatchReceivePolicy batchReceivePolicy, Map<String, Object> propertiesToOverride) throws PulsarClientException;
 
 	Map<String, Object> getConsumerConfig();
 }

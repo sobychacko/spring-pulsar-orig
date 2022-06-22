@@ -25,7 +25,18 @@ import org.springframework.pulsar.config.PulsarListenerConfigUtils;
 import org.springframework.pulsar.config.PulsarListenerEndpointRegistry;
 
 /**
+ * An {@link ImportBeanDefinitionRegistrar} class that registers a {@link PulsarListenerAnnotationBeanPostProcessor}
+ * bean capable of processing Spring's @{@link PulsarListener} annotation. Also register
+ * a default {@link PulsarListenerEndpointRegistry}.
+ *
+ * <p>This configuration class is automatically imported when using the @{@link EnablePulsar}
+ * annotation.  
+ *
  * @author Soby Chacko
+ *
+ * @see PulsarListenerAnnotationBeanPostProcessor
+ * @see PulsarListenerEndpointRegistry
+ * @see EnablePulsar
  */
 public class PulsarBootstrapConfiguration implements ImportBeanDefinitionRegistrar {
 

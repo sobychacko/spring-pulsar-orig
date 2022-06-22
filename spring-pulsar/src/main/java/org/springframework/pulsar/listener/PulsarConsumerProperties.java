@@ -34,12 +34,12 @@ public class PulsarConsumerProperties {
 	/**
 	 * Topic names.
 	 */
-	private final String[] topics;
+	private String[] topics;
 
 	/**
 	 * Topic pattern.
 	 */
-	private final Pattern topicsPattern;
+	private Pattern topicsPattern;
 
 	private String subscriptionName;
 
@@ -97,6 +97,13 @@ public class PulsarConsumerProperties {
 		this.topics = null;
 	}
 
+	public void setTopics(String[] topics) {
+		this.topics = topics;
+	}
+
+	public void setTopicsPattern(Pattern topicsPattern) {
+		this.topicsPattern = topicsPattern;
+	}
 
 	public String getSubscriptionName() {
 		return subscriptionName;
@@ -297,4 +304,6 @@ public class PulsarConsumerProperties {
 	public Pattern getTopicsPattern() {
 		return topicsPattern;
 	}
+
+
 }
