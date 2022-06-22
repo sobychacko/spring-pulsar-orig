@@ -62,12 +62,10 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 	private final AbstractPulsarMessageListenerContainer thisOrParentContainer;
 
-
 	public DefaultPulsarMessageListenerContainer(PulsarConsumerFactory<? super T> pulsarConsumerFactory, PulsarContainerProperties pulsarContainerProperties) {
 		super(pulsarConsumerFactory, pulsarContainerProperties);
 		this.thisOrParentContainer = this;
 	}
-
 
 	@Override
 	public void start() {
@@ -75,7 +73,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			doStart();
 		}
 		catch (PulsarClientException e) {
-			e.printStackTrace(); //deal later
+			e.printStackTrace(); //TODO: proper logging
 		}
 	}
 
@@ -83,11 +81,11 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 		PulsarContainerProperties containerProperties = getPulsarContainerProperties();
 
-		Object messageListener = containerProperties.getMessageListener();
+		Object messageListenerObject = containerProperties.getMessageListener();
 		AsyncListenableTaskExecutor consumerExecutor = containerProperties.getConsumerTaskExecutor();
 
 		@SuppressWarnings("unchecked")
-		MessageListener<T> messageListener1 = (MessageListener<T>) messageListener;
+		MessageListener<T> messageListener = (MessageListener<T>) messageListenerObject;
 
 		if (consumerExecutor == null) {
 			consumerExecutor = new SimpleAsyncTaskExecutor(
@@ -95,7 +93,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			containerProperties.setConsumerTaskExecutor(consumerExecutor);
 		}
 
-		this.listenerConsumer = new Listener(messageListener1);
+		this.listenerConsumer = new Listener(messageListener);
 		setRunning(true);
 		this.startLatch = new CountDownLatch(1);
 		this.listenerConsumerFuture = consumerExecutor.submitListenable(this.listenerConsumer);
@@ -200,63 +198,18 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 			try {
 				final PulsarContainerProperties pulsarContainerProperties = getPulsarContainerProperties();
+				Map<String, Object> propertiesToOverride = extractPropertiesToOverride(pulsarContainerProperties);
 				if (this.containerProperties.isBatchReceive() || this.containerProperties.isBatchAsyncReceive()) {
-
-					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
-					final Map<String, Object> propertiesToOverride = new HashMap<>();
-					if (subscriptionType != null) {
-						propertiesToOverride.put("subscriptionType", subscriptionType);
-					}
-					final String[] topics1 = pulsarContainerProperties.getTopics();
-					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-					if (!strings.isEmpty()) {
-						propertiesToOverride.put("topicNames", strings);
-					}
-					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
-						propertiesToOverride.put("subscriptionName",
-								pulsarContainerProperties.getSubscriptionName());
-					}
-
-
 					final BatchReceivePolicy batchReceivePolicy = BatchReceivePolicy.DEFAULT_POLICY;
-
 					this.consumer = getPulsarConsumerFactory().createConsumer(
 							(Schema) pulsarContainerProperties.getSchema(),
 							batchReceivePolicy, propertiesToOverride);
 				}
 				else if (this.containerProperties.isAsyncReceive()) {
-					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
-					final Map<String, Object> propertiesToOverride = new HashMap<>();
-					if (subscriptionType != null) {
-						propertiesToOverride.put("subscriptionType", subscriptionType);
-					}
-					final String[] topics1 = pulsarContainerProperties.getTopics();
-					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-					if (!strings.isEmpty()) {
-						propertiesToOverride.put("topicNames", strings);
-					}
-					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
-						propertiesToOverride.put("subscriptionName",
-								pulsarContainerProperties.getSubscriptionName());
-					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
 							(Schema) pulsarContainerProperties.getSchema(), propertiesToOverride);
 				}
 				else {
-					final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
-					final Map<String, Object> propertiesToOverride = new HashMap<>();
-					if (subscriptionType != null) {
-						propertiesToOverride.put("subscriptionType", subscriptionType);
-					}
-					final String[] topics1 = pulsarContainerProperties.getTopics();
-					final HashSet<String> strings = new HashSet<>(Arrays.stream(topics1).toList());
-					if (!strings.isEmpty()) {
-						propertiesToOverride.put("topicNames", strings);
-					}
-					if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
-						propertiesToOverride.put("subscriptionName",
-								pulsarContainerProperties.getSubscriptionName());
-					}
 					this.consumer = getPulsarConsumerFactory().createConsumer(
 							(Schema) pulsarContainerProperties.getSchema(), propertiesToOverride);
 				}
@@ -265,6 +218,24 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 				e.printStackTrace(); //TODO - Proper logging
 			}
 
+		}
+
+		private Map<String, Object> extractPropertiesToOverride(PulsarContainerProperties pulsarContainerProperties) {
+			final SubscriptionType subscriptionType = pulsarContainerProperties.getSubscriptionType();
+			final Map<String, Object> propertiesToOverride = new HashMap<>();
+			if (subscriptionType != null) {
+				propertiesToOverride.put("subscriptionType", subscriptionType);
+			}
+			final String[] topics = pulsarContainerProperties.getTopics();
+			final HashSet<String> strings = new HashSet<>(Arrays.stream(topics).toList());
+			if (!strings.isEmpty()) {
+				propertiesToOverride.put("topicNames", strings);
+			}
+			if (StringUtils.hasText(pulsarContainerProperties.getSubscriptionName())) {
+				propertiesToOverride.put("subscriptionName",
+						pulsarContainerProperties.getSubscriptionName());
+			}
+			return propertiesToOverride;
 		}
 
 		@Override
@@ -281,26 +252,25 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			publishConsumerStartedEvent();
 			while (isRunning()) {
 				Message<T> msg = null;
-				Messages<T> messages = null;
 				try {
 					// Wait for a message
 					if (this.containerProperties.isBatchReceive()) {
-						messages = consumer.batchReceive();
+						Messages<T> messages  = consumer.batchReceive();
 						this.batchMessageHandler.received(consumer, messages);
 						consumer.acknowledge(messages);
 					}
 					else if (this.containerProperties.isBatchAsyncReceive()) {
 						final CompletableFuture<Messages<T>> messagesCompletableFuture = consumer.batchReceiveAsync();
 
-						messagesCompletableFuture.thenAccept(messages1 -> {
-							if (messages1 != null) {
-								this.batchMessageHandler.received(consumer, messages1);
+						messagesCompletableFuture.thenAccept(messages -> {
+							if (messages != null) {
+								this.batchMessageHandler.received(consumer, messages);
 								if (this.containerProperties.getAckMode() != PulsarContainerProperties.AckMode.MANUAL) {
 									try {
-										consumer.acknowledge(messages1);
+										consumer.acknowledge(messages);
 									}
 									catch (PulsarClientException e) {
-										consumer.negativeAcknowledge(messages1);
+										consumer.negativeAcknowledge(messages);
 									}
 								}
 							}
@@ -343,14 +313,6 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 					consumer.negativeAcknowledge(msg);
 				}
 			}
-			try {
-				logger.info("Closing Consumer: " + this.consumer);
-				this.consumer.close();
-			}
-			catch (PulsarClientException e) {
-				e.printStackTrace(); //TODO - Proper logging
-			}
 		}
 	}
-
 }
