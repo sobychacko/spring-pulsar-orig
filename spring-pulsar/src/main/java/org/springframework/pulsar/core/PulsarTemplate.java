@@ -27,8 +27,6 @@ import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 
-import org.springframework.util.Assert;
-
 /**
  * @author Soby Chacko
  */
@@ -55,20 +53,30 @@ public class PulsarTemplate<T> {
 		return producer.send(message);
 	}
 
-	private SchemaTopic getSchemaTopic(Schema<T> schema, PulsarProducerFactory<T> pulsarProducerFactory) {
-		return new SchemaTopic(schema, (String) pulsarProducerFactory.getProducerConfig().get("topicName"));
-	}
-
 	public CompletableFuture<MessageId> sendAsync(T message) throws PulsarClientException {
 		final Schema<T> schema = SchemaUtils.getSchema(message);
-		final Producer<T> producer = this.pulsarProducerFactory.createProducer(schema);
+		final SchemaTopic schemaTopic = getSchemaTopic(schema, this.pulsarProducerFactory);
+		Producer<T> producer = producerCache.get(schemaTopic);
+		if (producer == null) {
+			producer = this.pulsarProducerFactory.createProducer(schema);
+			producerCache.put(schemaTopic, producer);
+		}
 		return producer.sendAsync(message);
 	}
 
 	public CompletableFuture<MessageId> sendAsync(T message, MessageRouter messageRouter) throws PulsarClientException {
 		final Schema<T> schema = SchemaUtils.getSchema(message);
-		final Producer<T> producer = this.pulsarProducerFactory.createProducer(schema, messageRouter);
+		final SchemaTopic schemaTopic = getSchemaTopic(schema, this.pulsarProducerFactory);
+		Producer<T> producer = producerCache.get(schemaTopic);
+		if (producer == null) {
+			producer = this.pulsarProducerFactory.createProducer(schema, messageRouter);
+			producerCache.put(schemaTopic, producer);
+		}
 		return producer.sendAsync(message);
+	}
+
+	private SchemaTopic getSchemaTopic(Schema<T> schema, PulsarProducerFactory<T> pulsarProducerFactory) {
+		return new SchemaTopic(schema, (String) pulsarProducerFactory.getProducerConfig().get("topicName"));
 	}
 
 	public void setDefaultTopicName(String defaultTopicName) {
