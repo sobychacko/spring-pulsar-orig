@@ -34,8 +34,7 @@ import org.springframework.util.Assert;
  */
 public class PulsarTemplate<T> {
 
-	//TODO: Cache the producer created from the "createProducer" call
-	private Map<SchemaTopic, Producer<T>> producerCache = new ConcurrentHashMap<>();
+	private final Map<SchemaTopic, Producer<T>> producerCache = new ConcurrentHashMap<>();
 
 	private final PulsarProducerFactory<T> pulsarProducerFactory;
 

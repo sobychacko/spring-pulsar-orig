@@ -19,6 +19,7 @@ package org.springframework.pulsar.config;
 import org.apache.pulsar.client.api.PulsarClient;
 
 import org.springframework.beans.factory.config.AbstractFactoryBean;
+import org.springframework.lang.Nullable;
 import org.springframework.pulsar.config.PulsarClientConfiguration;
 
 /**
@@ -43,4 +44,13 @@ public class PulsarClientFactoryBean extends AbstractFactoryBean<PulsarClient> {
 				.loadConf(this.pulsarClientConfiguration.getConfigs())
 				.build();
 	}
+
+	@Override
+	protected void destroyInstance(PulsarClient instance) throws Exception {
+		if (instance != null) {
+			System.out.printf("CLOSING THE CLIENT");
+			instance.close();
+		}
+	}
+
 }

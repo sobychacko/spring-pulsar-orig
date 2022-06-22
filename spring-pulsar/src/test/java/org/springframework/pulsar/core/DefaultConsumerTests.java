@@ -67,6 +67,7 @@ public class DefaultConsumerTests extends AbstractContainerBaseTest {
 			final PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
 			final CompletableFuture<MessageId> future = pulsarTemplate.sendAsync("hello john doe");
 			latch.await(10, TimeUnit.SECONDS);
+			pulsarClient.close();
 //		}
 	}
 
