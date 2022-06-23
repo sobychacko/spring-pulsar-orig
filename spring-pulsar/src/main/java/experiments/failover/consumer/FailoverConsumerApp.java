@@ -16,7 +16,8 @@ public class FailoverConsumerApp {
 
 
 	public static void main(String[] args) {
-		String[] args1 = new String[]{"--spring.pulsar.consumer.subscription-type=Failover",
+		String[] args1 = new String[]{
+				"--spring.pulsar.consumer.subscription-type=Failover",
 			"--spring.pulsar.producer.messageRoutingMode=CustomPartition"};
 		SpringApplication.run(FailoverConsumerApp.class, args1);
 	}
@@ -36,7 +37,7 @@ public class FailoverConsumerApp {
 		};
 	}
 
-	@PulsarListener(subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
+	@PulsarListener(subscriptionName = "failover-subscription-demo",  topics = "failover-demo-topic")
 	public void listen1(String foo) {
 		System.out.println("Message Received 1: " + foo);
 	}
@@ -46,7 +47,7 @@ public class FailoverConsumerApp {
 		System.out.println("Message Received 2: " + foo);
 	}
 
-	@PulsarListener(subscriptionName = "failover-subscription-demo", topics = "failover-demo-topic")
+	@PulsarListener(subscriptionName = "failover-subscription-demo",  topics = "failover-demo-topic")
 	public void listen(String foo) {
 		System.out.println("Message Received 3: " + foo);
 	}
